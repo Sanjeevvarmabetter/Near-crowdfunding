@@ -23,6 +23,7 @@ near-sdk = "5.7.0"
 borsh = "1.5.1"
 borsh-derive = "1.5.1"
 serde = { version = "1.0", features = ["derive"] }
+schemars = "0.8.21"
 
 
 [dev-dependencies]

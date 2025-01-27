@@ -5,6 +5,7 @@ use near_sdk::{
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use schemars::JsonSchema;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -25,7 +26,6 @@ impl Default for Crowdfunding {
     }
 }
 
-// Rest of the code remains the same as in the previous version
 #[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Deserialize)]
 pub struct Campaign {
     creator: AccountId,
@@ -34,6 +34,30 @@ pub struct Campaign {
     target: NearToken,
     deadline: u64,
     amount_collected: NearToken,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CampaignView {
+    pub creator: String,
+    pub title: String,
+    pub description: String,
+    pub target: String,        // changed NearToken as string
+    pub deadline: u64,
+    pub amount_collected: String,  // changed NearToken as string
+}
+
+impl Campaign {
+    pub fn to_view(&self) -> CampaignView {
+        CampaignView {
+            creator: self.creator.to_string(),
+            title: self.title.clone(),
+            description: self.description.clone(),
+            target: self.target.to_string(),
+            deadline: self.deadline,
+            amount_collected: self.amount_collected.to_string(),
+        }
+    }
 }
 
 #[near_bindgen]
@@ -124,28 +148,5 @@ impl Crowdfunding {
             "Only the current platform wallet can update this"
         );
         self.platform_wallet = new_wallet;
-    }
-}
-
-#[derive(Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-pub struct CampaignView {
-    pub creator: String,
-    pub title: String,
-    pub description: String,
-    pub target: NearToken,
-    pub deadline: u64,
-    pub amount_collected: NearToken,
-}
-
-impl Campaign {
-    pub fn to_view(&self) -> CampaignView {
-        CampaignView {
-            creator: self.creator.to_string(),
-            title: self.title.clone(),
-            description: self.description.clone(),
-            target: self.target,
-            deadline: self.deadline,
-            amount_collected: self.amount_collected,
-        }
     }
 }
