@@ -29,6 +29,7 @@ impl Default for Crowdfunding {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Deserialize)]
 pub struct Campaign {
     creator: AccountId,
+    image: String,
     title: String,
     description: String,
     target: NearToken,
@@ -40,6 +41,7 @@ pub struct Campaign {
 #[serde(crate = "near_sdk::serde")]
 pub struct CampaignView {
     pub creator: String,
+    pub image: String,
     pub title: String,
     pub description: String,
     pub target: String,        // changed NearToken as string
@@ -51,6 +53,7 @@ impl Campaign {
     pub fn to_view(&self) -> CampaignView {
         CampaignView {
             creator: self.creator.to_string(),
+            image: self.image.clone(),
             title: self.title.clone(),
             description: self.description.clone(),
             target: self.target.to_string(),
@@ -74,12 +77,13 @@ impl Crowdfunding {
     #[payable]
     pub fn create_campaign(
         &mut self,
+        image: String,
         title: String,
         description: String,
         target: NearToken,
         deadline: u64,
     ) {
-        let required_fee = NearToken::from_yoctonear(10_000_000_000_000_000_000_000_000); // 0.010 NEAR
+        let required_fee = NearToken::from_yoctonear(10_000_000_000_000_000_000_000); // 0.010 NEAR
         assert!(
             env::attached_deposit() >= required_fee,
             "You need to attach at least 0.010 NEAR to create a campaign"
@@ -87,6 +91,7 @@ impl Crowdfunding {
 
         let campaign = Campaign {
             creator: env::predecessor_account_id(),
+            image,
             title,
             description,
             target,
@@ -105,8 +110,14 @@ impl Crowdfunding {
             .get_mut(&campaign_id)
             .expect("Campaign not found");
 
+        env::log_str(&format!(
+            "Current timestamp: {}, Deadline: {}",
+            env::block_timestamp(),
+            campaign.deadline
+        ));
+
         assert!(
-            env::block_timestamp() < campaign.deadline,
+            env::block_timestamp() <= campaign.deadline,
             "Campaign has ended"
         );
 
@@ -128,18 +139,16 @@ impl Crowdfunding {
         Promise::new(campaign.creator.clone()).transfer(creator_share);
         Promise::new(self.platform_wallet.clone()).transfer(platform_share);
 
-        // Reset the amount collected once the target is reached
-        if campaign.amount_collected >= campaign.target {
-            campaign.amount_collected = NearToken::from_near(0);
-        }
     }
 
     pub fn get_campaigns(&self) -> Vec<(u64, CampaignView)> {
+        env::log_str(&format!("Campaigns: {:?}", self.campaigns));  // Log the current campaigns
         self.campaigns
             .iter()
             .map(|(&id, campaign)| (id, campaign.to_view()))
             .collect()
     }
+    
 
     pub fn set_platform_wallet(&mut self, new_wallet: AccountId) {
         assert_eq!(
