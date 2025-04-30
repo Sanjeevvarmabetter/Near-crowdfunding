@@ -25,6 +25,8 @@ const googleProvider = new GoogleAuthProvider();
 /// adding auth users
 const AUTHORIZED_USERS = [
   'sanjeevvarmacode@gmail.com',
+  'ignitusnet@gmail.com',
+  'santhosh.nair2001@gmail.com',
 
 ];
 
